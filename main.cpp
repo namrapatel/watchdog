@@ -1,51 +1,89 @@
-#include <net-snmp/net-snmp-config.h>
-#include <net-snmp/net-snmp-includes.h>
+#include <chrono>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <array>
+#include <boost/asio.hpp>
+#include <nlohmann/json.hpp>
 
-int main(int argc, char **argv) {
-    // Initialize the SNMP library
-    init_snmp("snmpapp");
+void measure_network_performance() {
+    boost::asio::io_context io_context;
 
-    // Open an SNMP session with the router
-    netsnmp_session session, *ss;
-    init_snmp("snmpapp");
-    snmp_sess_init(&session);
-    session.peername = strdup("192.168.1.1");
-    session.version = SNMP_VERSION_2c;
-    session.community = (u_char *)"public";
-    session.community_len = strlen((const char *)session.community);
-    ss = snmp_open(&session);
+    boost::asio::ip::tcp::resolver resolver(io_context);
+    auto endpoints = resolver.resolve("your_network_address", "your_network_port");
 
-    if (!ss) {
-        snmp_perror("snmp_open");
-        exit(1);
+    boost::asio::ip::tcp::socket socket(io_context);
+    boost::asio::connect(socket, endpoints);
+
+    std::string request = "your_request";
+    std::array<char, 128> buffer;
+
+    auto start_time = std::chrono::steady_clock::now();
+    boost::asio::write(socket, boost::asio::buffer(request));
+    size_t length = socket.read_some(boost::asio::buffer(buffer));
+    auto end_time = std::chrono::steady_clock::now();
+    std::chrono::duration<double, std::milli> latency = end_time - start_time;
+    std::cout << "Latency: " << latency.count() << "ms\n";
+
+    constexpr int packet_size = 1024 * 1024; // 1 MB
+    constexpr int packet_count = 10;
+    std::string packet(packet_size, 'X');
+
+    start_time = std::chrono::steady_clock::now();
+    for (int i = 0; i < packet_count; i++) {
+        boost::asio::write(socket, boost::asio::buffer(packet));
+    }
+    size_t total_bytes = packet_size * packet_count;
+    size_t bytes_transferred = 0;
+    while (bytes_transferred < total_bytes) {
+        bytes_transferred += socket.read_some(boost::asio::buffer(buffer));
+    }
+    end_time = std::chrono::steady_clock::now();
+    std::chrono::duration<double> transfer_time = end_time - start_time;
+    double transfer_rate = total_bytes / transfer_time.count() / 1024 / 1024;
+    std::cout << "Bandwidth: " << transfer_rate << " MB/s\n";
+
+    socket.close();
+}
+
+void discover_network_hosts() {
+    boost::asio::io_context io_context;
+
+    boost::asio::ip::udp::resolver resolver(io_context);
+    auto endpoints = resolver.resolve(boost::asio::ip::udp::v4(), "0.0.0.0", "0");
+
+    boost::asio::ip::udp::socket socket(io_context);
+    socket.open(boost::asio::ip::udp::v4());
+    socket.set_option(boost::asio::ip::udp::socket::reuse_address(true));
+    socket.bind(*endpoints.begin());
+
+    std::string request = "\xff\xff\xff\xff\xff\xff\x00\x06\x4d\x61\x68\x6f\x6e\x65";
+    request.append(18, '\0');
+    std::array<char, 128> buffer;
+    boost::asio::ip::udp::endpoint sender_endpoint;
+    std::cout << "Scanning network...\n";
+    for (int i = 1; i <= 254; i++) {
+        std::stringstream ss;
+        ss << "192.168.0." << i;
+        boost::asio::ip::udp::endpoint receiver_endpoint(boost::asio::ip::address::from_string(ss.str()), 0);
+        socket.send_to(boost::asio::buffer(request), receiver_endpoint);
+        try {
+            size_t length = socket.receive_from(boost::asio::buffer(buffer), sender_endpoint);
+            if (length == 28 && buffer[0] == 0
+        && buffer[1] == 1 && buffer[2] == 8 && buffer[3] == 0 && buffer[4] == 6 && buffer[5] == 4) {
+            std::cout << "Host found: " << sender_endpoint.address().to_string() << "\n";
+        }
+    }
+        catch (...) {
+            // ignore timeouts and other errors
+        }
     }
 
-    // Retrieve the bandwidth and latency information using SNMP
-    netsnmp_variable_list *vars;
-    oid bandwidth_oid[] = {1, 3, 6, 1, 2, 1, 2, 2, 1, 5, 1}; // ifSpeed OID
-    oid latency_oid[] = {1, 3, 6, 1, 2, 1, 4, 22, 1, 3, 1}; // icmpEchoMaxRTT OID
-    const int bandwidth_oid_len = sizeof(bandwidth_oid)/sizeof(oid);
-    const int latency_oid_len = sizeof(latency_oid)/sizeof(oid);
+socket.close();
+}
 
-    // Retrieve bandwidth information
-    snmpget(ss, bandwidth_oid, bandwidth_oid_len, &vars);
-    if (vars) {
-        printf("Bandwidth: %ld\n", *(vars->val.integer));
-        snmp_free_var(vars);
-    } else {
-        printf("Error retrieving bandwidth information: %s\n", snmp_errstring(snmp_errno));
-    }
-
-    // Retrieve latency information
-    snmpget(ss, latency_oid, latency_oid_len, &vars);
-    if (vars) {
-        printf("Latency: %ld\n", *(vars->val.integer));
-        snmp_free_var(vars);
-    } else {
-        printf("Error retrieving latency information: %s\n", snmp_errstring(snmp_errno));
-    }
-
-    // Close the SNMP session
-    snmp_close(ss);
+int main() {
+    measure_network_performance();
+    discover_network_hosts();
     return 0;
 }
