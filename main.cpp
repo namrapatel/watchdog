@@ -4,7 +4,6 @@
 #include <string>
 #include <array>
 #include <boost/asio.hpp>
-#include <nlohmann/json.hpp>
 
 void measure_network_performance() {
     boost::asio::io_context io_context;
