@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "*.ejs": "html",
+        "net-snmp-includes.h": "c"
+    }
+}
