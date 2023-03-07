@@ -19,7 +19,7 @@ int main()
     const char* url = "https://sabnzbd.org/tests/internetspeed/20MB.bin";
 
     // Set the number of repetitions for each data size
-    const int repetitions = 5;
+    const int repetitions = 2;
 
     // Initialize libcurl
     curl_global_init(CURL_GLOBAL_ALL);
