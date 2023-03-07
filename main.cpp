@@ -1,8 +1,6 @@
 #include <iostream>
 #include <chrono>
-#include <thread>
-#include <string>
-#include <cstdlib>
+#include <cmath>
 #include <curl/curl.h>
 
 using namespace std;
@@ -17,26 +15,15 @@ size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata)
 
 int main()
 {
-    // Set the size of the data to transfer
-    const int dataSize = 1024 * 1024 * 10; // 10 MB
+    // Set the URL of the file to transfer
+    const char* url = "http://ipv4.download.thinkbroadband.com/512MB.zip";
 
-    // Generate a random filename for the data to transfer
-    string filename = "transfer-" + to_string(rand()) + ".bin";
+    // Set the minimum and maximum data sizes to transfer
+    const int minDataSize = 1024 * 1024; // 1 MB
+    const int maxDataSize = 1024 * 1024 * 512; // 512 MB
 
-    // Create a buffer of the specified size
-    char* buffer = new char[dataSize];
-
-    // Write random data to the buffer
-    srand(time(NULL));
-    for (int i = 0; i < dataSize; i++)
-    {
-        buffer[i] = rand() % 256;
-    }
-
-    // Write the buffer to a file
-    FILE* file = fopen(filename.c_str(), "wb");
-    fwrite(buffer, 1, dataSize, file);
-    fclose(file);
+    // Set the number of repetitions for each data size
+    const int repetitions = 10;
 
     // Initialize libcurl
     curl_global_init(CURL_GLOBAL_ALL);
@@ -44,66 +31,91 @@ int main()
 
     if (curl)
     {
-        // Set the URL of the server to transfer the data to
-        curl_easy_setopt(curl, CURLOPT_URL, "http://speedtest.tele2.net/upload.php");
+        // Set the URL of the server to transfer the data to and from
+        curl_easy_setopt(curl, CURLOPT_URL, url);
 
         // Set the write callback function to receive data from the server
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
 
-        // Set the file to transfer
-        curl_easy_setopt(curl, CURLOPT_READDATA, filename.c_str());
+        // Disable libcurl's built-in speed limits to allow maximum bandwidth usage
+        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 0L);
+        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 0L);
 
-        // Set the size of the file to transfer
-        curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)dataSize);
+        // Set the buffer size and the CURL buffer size to handle large data sizes
+        curl_easy_setopt(curl, CURLOPT_BUFFERSIZE, 1024 * 1024 * 10L);
+        curl_easy_setopt(curl, CURLOPT_MAX_RECV_SPEED_LARGE, 0L); 
 
-        // Measure the time it takes to transfer the data (upload)
-        auto startUpload = high_resolution_clock::now();
-        curl_easy_perform(curl);
-        auto endUpload = high_resolution_clock::now();
+        // Create a vector to store the measured bandwidths
+        double bandwidths[30];
 
-        // Compute the elapsed time in milliseconds (upload)
-        auto elapsedUpload = duration_cast<milliseconds>(endUpload - startUpload).count();
+        // Iterate over the different data sizes
+        for (int i = 0, dataSize = minDataSize; dataSize <= maxDataSize; dataSize *= 2, i++)
+        {
+            // Create a buffer of the specified size
+            char* buffer = new char[dataSize];
 
-        // Compute the bandwidth in bytes per second (upload)
-        double bandwidthBytesPerSecUpload = (double)dataSize * 8 / (double)elapsedUpload * 1000;
+            // Measure the time it takes to transfer the data
+            double totalElapsed = 0;
+            for (int j = 0; j < repetitions; j++)
+            {
+                // Set the size of the file to transfer
+                string range = "0-" + to_string(dataSize - 1);
+                curl_easy_setopt(curl, CURLOPT_RANGE, range.c_str());
 
-        // Compute the bandwidth in megabytes per second (upload)
-        double bandwidthMegabytesPerSecUpload = bandwidthBytesPerSecUpload / 1000000;
+                // Measure the time it takes to download the data
+                auto startDownload = high_resolution_clock::now();
+                printf("Downloading\n");
+                curl_easy_perform(curl); 
+                printf("Downloaded\n");
+                auto endDownload = high_resolution_clock::now();
 
-        // Set the URL of the server to transfer the data from
-        curl_easy_setopt(curl, CURLOPT_URL, "http://speedtest.tele2.net/10MB.zip");
+                // Compute the elapsed time in milliseconds
+                auto elapsed = duration_cast<milliseconds>(endDownload - startDownload).count();
 
-        // Reset the write callback function to receive data from the server
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+                totalElapsed += elapsed;
+            }
 
-        // Measure the time it takes to transfer the data (download)
-        auto startDownload = high_resolution_clock::now();
-        curl_easy_perform(curl);
-        auto endDownload = high_resolution_clock::now();
+            // Compute the average elapsed time in milliseconds
+            double avgElapsed = totalElapsed / repetitions;
 
-        // Compute the elapsed time in milliseconds (download)
-        auto elapsedDownload = duration_cast<milliseconds>(endDownload - startDownload).count();
+            // Compute the bandwidth in bytes per second
+            double bandwidthBytesPerSec = (double)dataSize * 8 / (double)avgElapsed * 1000;
 
-        // Compute the bandwidth in bytes per second (download)
-        double bandwidthBytesPerSecDownload = (double)dataSize * 8 / (double)elapsedDownload * 1000;
+            // Compute the bandwidth in megabytes per second
+            double bandwidthMegabytesPerSec = bandwidthBytesPerSec / 1000000;
 
-           // Compute the bandwidth in megabytes per second (download)
-        double bandwidthMegabytesPerSecDownload = bandwidthBytesPerSecDownload / 1000000;
+            // Add the bandwidth to the array
+            bandwidths[i] = bandwidthMegabytesPerSec;
 
-        // Output the results
-        cout << "Network upload bandwidth: " << bandwidthMegabytesPerSecUpload << " MB/s" << endl;
-        cout << "Network download bandwidth: " << bandwidthMegabytesPerSecDownload << " MB/s" << endl;
-
-        // Remove the transferred file
-        remove(filename.c_str());
-
-        // Cleanup libcurl
-        curl_easy_cleanup(curl);
-        curl_global_cleanup();
+            // Free
+        // Free the buffer
+        delete[] buffer;
     }
 
-    // Free the buffer
-    delete[] buffer;
+    // Compute the average and standard deviation of the measured bandwidths
+    double sum = 0;
+    for (double bandwidth : bandwidths)
+    {
+        sum += bandwidth;
+    }
+    double mean = sum / 30;
 
-    return 0;
+    double variance = 0;
+    for (double bandwidth : bandwidths)
+    {
+        variance += pow(bandwidth - mean, 2);
+    }
+    variance /= 30;
+
+    double stddev = sqrt(variance);
+
+    // Output the results
+    cout << "Network bandwidth: " << mean << " +/- " << stddev << " MB/s" << endl;
+
+    // Cleanup libcurl
+    curl_easy_cleanup(curl);
+    curl_global_cleanup();
+}
+
+return 0;
 }

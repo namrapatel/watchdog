@@ -3,6 +3,7 @@
         "*.ejs": "html",
         "net-snmp-includes.h": "c",
         "chrono": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "string": "cpp"
     }
 }
