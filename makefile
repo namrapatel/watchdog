@@ -1,7 +1,11 @@
-# compile with make: g++ -I/opt/homebrew/include/ -o ./out main.cpp
-compile:  main.cpp
-	g++ -I/opt/homebrew/include/ -lcurl -o ./out upload.cpp
+compile down:  download.cpp
+	g++ -I/opt/homebrew/include/ -lcurl -o ./down download.cpp
 
-# run with make: ./out
-run: ./out
-	./out
+run down: ./down
+	./down
+
+compile down:  upload.cpp
+	g++ -I/opt/homebrew/include/ -lcurl -o ./up upload.cpp
+
+run down: ./up
+	./up
