@@ -1,11 +1,17 @@
-compile down:  download.cpp
-	g++ -I/opt/homebrew/include/ -lcurl -o ./down download.cpp
+cdown:  ./src/download.cpp
+	g++ -I/opt/homebrew/include/ -lcurl -o ./down ./src/download.cpp
 
-run down: ./down
+rdown: ./down
 	./down
 
-compile down:  upload.cpp
-	g++ -I/opt/homebrew/include/ -lcurl -o ./up upload.cpp
+cup:  ./src/upload.cpp
+	g++ -I/opt/homebrew/include/ -lcurl -o ./up ./src/upload.cpp
 
-run down: ./up
+rup: ./up
 	./up
+
+cping:  ./src/ping.cpp
+	g++ -I/opt/homebrew/include/ -lcurl -o ./ping ./src/ping.cpp
+
+rping: ./ping
+	./ping
