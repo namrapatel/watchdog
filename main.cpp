@@ -38,11 +38,14 @@ int main()
     // Compute the elapsed time in milliseconds
     auto elapsed = duration_cast<milliseconds>(end - start).count();
 
-    // Compute the bandwidth in bits per second
-    double bandwidth = (double)dataSize * 8 / (double)elapsed * 1000;
+    // Compute the bandwidth in bytes per second
+    double bandwidthBytesPerSec = (double)dataSize * 8 / (double)elapsed * 1000;
+
+    // Compute the bandwidth in megabytes per second
+    double bandwidthMegabytesPerSec = bandwidthBytesPerSec / 1000000;
 
     // Output the result
-    cout << "Network bandwidth: " << bandwidth << " bps" << endl;
+    cout << "Network bandwidth: " << bandwidthMegabytesPerSec << " MB/s" << endl;
 
     // Free the buffer
     delete[] buffer;
