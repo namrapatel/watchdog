@@ -15,11 +15,11 @@ Ensure that you have `g++` installed, alongside any of the libraries that might 
 #### Use download.cpp
 ```bash
 make cdown 
-./down 
+make rdown
 ```
 
 #### Use ping.cpp
 ```bash
 make cping 
-./ping 
+make rping
 ```

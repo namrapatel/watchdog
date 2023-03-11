@@ -44,7 +44,7 @@ int main()
                 struct in_addr address;
                 address.s_addr = htonl(i);
                 string ip_address = inet_ntoa(address);
-                string ping_command = "ping " + ip_address + " -c 1 -w 100";
+                string ping_command = "ping " + ip_address + " -c 1"; // 
                 int result = system(ping_command.c_str());
                 if (result == 0)
                 {
