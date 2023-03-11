@@ -3,7 +3,7 @@
 Real-time network monitoring right from your command-line.
 
 ### Features
-- [ ] Network bandwidth monitoring
+- [x] Network bandwidth monitoring: Download and upload bandwidth testing
 - [ ] List connected devices
 - [ ] Bandwidth usage per device
 - [ ] Latency between computer and inputted IP/hostname
