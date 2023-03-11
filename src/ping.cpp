@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <chrono>
 #include <string>
+#include <regex>
 
 int main()
 {
@@ -19,19 +20,32 @@ int main()
 
         auto start_time = std::chrono::steady_clock::now();
 
-        // Execute the ping command and discard the output
-        std::system(command.c_str());
+        // Execute the ping command and capture the output
+        std::string output = "";
+        FILE* pipe = popen(command.c_str(), "r");
+        if (!pipe)
+        {
+            std::cerr << "Error executing ping command" << std::endl;
+            return 1;
+        }
+
+        char buffer[128];
+        while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
+        {
+            output += buffer;
+        }
 
         auto end_time = std::chrono::steady_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
         double latency = duration.count();
-        std::cout << "Trial " << i + 1 << " latency: " << latency << " ms" << std::endl;
+        std::cout << "Trial " << i + 1 << ": Ping=" << latency << "ms Host=" << host << std::endl;
+
         total_latency += latency;
     }
 
     double average_latency = total_latency / num_trials;
-    std::cout << "Average latency: " << average_latency << " ms" << std::endl;
+    std::cout << "Average ping: " << average_latency << " ms" << std::endl;
 
     return 0;
 }
