@@ -18,6 +18,12 @@ make cdown
 make rdown
 ```
 
+#### Use upload.cpp
+```bash
+make cup
+make rup
+```
+
 #### Use ping.cpp
 ```bash
 make cping 

@@ -1,68 +1,37 @@
 #include <iostream>
-#include <string>
-#include <vector>
 #include <cstdlib>
-#include <ifaddrs.h>
-#include <arpa/inet.h>
-
-using namespace std;
+#include <chrono>
+#include <string>
 
 int main()
 {
-    vector<string> hosts;
+    std::string host;
+    std::cout << "Enter the host to ping: ";
+    std::cin >> host;
 
-    // Get list of network interfaces and their addresses
-    struct ifaddrs *ifaddr, *ifa;
-    if (getifaddrs(&ifaddr) == -1)
+    std::cout << "Pinging " << host << "..." << std::endl;
+
+    int num_trials = 5;
+    double total_latency = 0.0;
+    for (int i = 0; i < num_trials; i++)
     {
-        cerr << "Error getting network interfaces" << endl;
-        return 1;
+        std::string command = "ping -c 1 " + host;
+
+        auto start_time = std::chrono::steady_clock::now();
+
+        // Execute the ping command and discard the output
+        std::system(command.c_str());
+
+        auto end_time = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+
+        double latency = duration.count();
+        std::cout << "Trial " << i + 1 << " latency: " << latency << " ms" << std::endl;
+        total_latency += latency;
     }
 
-    // Loop through interfaces
-    for (ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next)
-    {
-        // Only consider IPv4 interfaces
-        if (ifa->ifa_addr->sa_family == AF_INET)
-        {
-            // Get interface address and netmask
-            string interface_name = ifa->ifa_name;
-            struct sockaddr_in* addr = (struct sockaddr_in*)ifa->ifa_addr;
-            struct sockaddr_in* netmask = (struct sockaddr_in*)ifa->ifa_netmask;
-
-            // Calculate network address and broadcast address
-            string ip_address = inet_ntoa(addr->sin_addr);
-            string netmask_str = inet_ntoa(netmask->sin_addr);
-            unsigned int ip = ntohl(addr->sin_addr.s_addr);
-            unsigned int nm = ntohl(netmask->sin_addr.s_addr);
-            unsigned int network = (ip & nm);
-            unsigned int broadcast = (ip | (~nm));
-
-            // Loop through addresses in network range
-            for (unsigned int i = network+1; i < broadcast; i++)
-            {
-                struct in_addr address;
-                address.s_addr = htonl(i);
-                string ip_address = inet_ntoa(address);
-                string ping_command = "ping " + ip_address + " -c 1"; // 
-                int result = system(ping_command.c_str());
-                if (result == 0)
-                {
-                    hosts.push_back(ip_address);
-                }
-            }
-        }
-    }
-
-    // Free memory used by ifaddrs
-    freeifaddrs(ifaddr);
-
-    // Print connected hosts
-    cout << "Connected hosts:" << endl;
-    for (const auto& host : hosts)
-    {
-        cout << host << endl;
-    }
+    double average_latency = total_latency / num_trials;
+    std::cout << "Average latency: " << average_latency << " ms" << std::endl;
 
     return 0;
 }
