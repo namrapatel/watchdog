@@ -16,7 +16,7 @@ int main()
         return 1;
     }
 
-    std::string file_path = "./data/20MB.bin";
+    std::string file_path = "./data/5MB.bin";
     std::ifstream file(file_path, std::ios::binary);
     if (!file)
     {
@@ -31,20 +31,32 @@ int main()
     char* buffer = new char[file_size];
     file.read(buffer, file_size);
 
-    printf("1");
-    curl_easy_setopt(curl, CURLOPT_URL, "ftp://tele2.net/upload/");
-    curl_easy_setopt(curl, CURLOPT_USERPWD, "anonymous:anonymous");
-    curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
-    curl_easy_setopt(curl, CURLOPT_READDATA, buffer);
-    curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, file_size);
+    curl_easy_setopt(curl, CURLOPT_URL, "http://speedtest.tele2.net/upload.php");
+    curl_easy_setopt(curl, CURLOPT_POST, 1L);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, buffer);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, file_size);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, upload_callback);
-    printf("2");
+
     CURLcode res = curl_easy_perform(curl);
     if (res != CURLE_OK)
     {
         std::cerr << "Error uploading file: " << curl_easy_strerror(res) << std::endl;
     }
-    printf("3");
+    else
+    {
+        long response_code;
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+
+        if (response_code == 200)
+        {
+            std::cout << "Upload completed successfully" << std::endl;
+        }
+        else
+        {
+            std::cerr << "Error: unexpected response code " << response_code << std::endl;
+        }
+    }
+
     curl_easy_cleanup(curl);
     delete[] buffer;
 

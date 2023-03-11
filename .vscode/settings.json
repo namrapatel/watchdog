@@ -4,6 +4,7 @@
         "net-snmp-includes.h": "c",
         "chrono": "cpp",
         "iostream": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "ios": "cpp"
     }
 }
