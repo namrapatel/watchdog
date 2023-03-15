@@ -15,3 +15,9 @@ cping:  ./src/ping.cpp
 
 rping: ./ping
 	./ping
+
+cband:  ./src/bandwidth_usage.cpp
+	g++ -I/opt/homebrew/include/ -lcurl -o ./band ./src/bandwidth_usage.cpp
+
+rband: ./band
+	./band
