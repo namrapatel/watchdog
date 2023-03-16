@@ -1,63 +1,63 @@
 #include <iostream>
 #include <pcap.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <net/ethernet.h>
-#define __FAVOR_BSD
 #include <netinet/ip.h>
-#undef __FAVOR_BSD
+#include <netinet/tcp.h>
+#include <arpa/inet.h>
+#include <map>
+#include <string>
 
+// Function to process packet
+void process_packet(const struct pcap_pkthdr *header, const u_char *packet, std::map<std::string, long long> &device_bandwidth);
 
-void process_packet(u_char* args, const struct pcap_pkthdr* header, const u_char* buffer)
-{
-    // Extract the IP header from the packet
-    const struct iphdr* ip_header = reinterpret_cast<const struct iphdr*>(buffer + sizeof(struct ether_header));
+int main() {
+    char errbuf[PCAP_ERRBUF_SIZE];
+    pcap_t *handle;
 
-    // Extract the TCP header from the packet
-    const struct tcphdr* tcp_header = reinterpret_cast<const struct tcphdr*>(buffer + sizeof(struct ether_header) + sizeof(struct iphdr));
+    // Get network device
+    char *dev = pcap_lookupdev(errbuf);
+    if (dev == NULL) {
+        std::cerr << "Device not found: " << errbuf << std::endl;
+        return 1;
+    }
 
-    // Print the source and destination IP addresses and port numbers
-    std::cout << "Source IP: " << inet_ntoa(*(reinterpret_cast<const struct in_addr*>(&ip_header->saddr))) << std::endl;
-    std::cout << "Destination IP: " << inet_ntoa(*(reinterpret_cast<const struct in_addr*>(&ip_header->daddr))) << std::endl;
-    std::cout << "Source port: " << ntohs(tcp_header->th_sport) << std::endl;
-    std::cout << "Destination port: " << ntohs(tcp_header->th_dport) << std::endl;
-    std::cout << "Packet length: " << header->len << " bytes" << std::endl;
+    // Open device
+    handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
+    if (handle == NULL) {
+        std::cerr << "Error opening device: " << errbuf << std::endl;
+        return 1;
+    }
+
+    // Map to store device IP and bandwidth usage
+    std::map<std::string, long long> device_bandwidth;
+
+    // Capture packets
+    struct pcap_pkthdr header;
+    const u_char *packet;
+    while (true) {
+        packet = pcap_next(handle, &header);
+        process_packet(&header, packet, device_bandwidth);
+    }
+
+    // Close pcap handle
+    pcap_close(handle);
+
+    return 0;
 }
 
-int main()
-{
-    char error_buffer[PCAP_ERRBUF_SIZE];
-    pcap_t* pcap_handle = nullptr;
+void process_packet(const struct pcap_pkthdr *header, const u_char *packet, std::map<std::string, long long> &device_bandwidth) {
+    // Get IP header
+    struct ip *ip_header = (struct ip *)(packet + 14);
 
-    // Open the network interface for capturing
-    pcap_handle = pcap_open_live("eth0", BUFSIZ, 1, 1000, error_buffer);
-    if (pcap_handle == nullptr)
-    {
-        std::cerr << "Error opening network interface: " << error_buffer << std::endl;
-        return 1;
+    // Get source IP
+    char src_ip[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(ip_header->ip_src), src_ip, INET_ADDRSTRLEN);
+
+    // Update bandwidth usage
+    device_bandwidth[src_ip] += header->len;
+
+    // Print devices and bandwidth usage
+    std::cout << "Devices connected and bandwidth usage:" << std::endl;
+    for (const auto &device : device_bandwidth) {
+        std::cout << device.first << ": " << device.second << " bytes" << std::endl;
     }
-
-    // Set a filter to capture TCP packets
-    struct bpf_program filter;
-    const char* filter_expression = "tcp";
-    if (pcap_compile(pcap_handle, &filter, filter_expression, 0, PCAP_NETMASK_UNKNOWN) == -1)
-    {
-        std::cerr << "Error compiling filter expression" << std::endl;
-        pcap_close(pcap_handle);
-        return 1;
-    }
-    if (pcap_setfilter(pcap_handle, &filter) == -1)
-    {
-        std::cerr << "Error setting filter" << std::endl;
-        pcap_close(pcap_handle);
-        return 1;
-    }
-
-    // Capture packets until the user presses a key
-    std::cout << "Capturing packets. Press any key to stop." << std::endl;
-    pcap_loop(pcap_handle, -1, process_packet, nullptr);
-
-    // Clean up and exit
-    pcap_close(pcap_handle);
-    return 0;
 }
