@@ -7,6 +7,10 @@ Real-time network monitoring right from your command-line.
 - [x] Latency between computer and inputted IP/hostname
 - [ ] List connected devices
 - [ ] Bandwidth usage per device
+    - Filter packets by port number (HTTP or other)
+    - Filter by protocol
+    - Filter by IP address range
+    - Filter by packet content:
 
 ### Usage
 
