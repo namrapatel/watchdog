@@ -14,18 +14,15 @@ Ensure that you have `g++` installed, alongside any of the libraries that might 
 
 #### Use download.cpp
 ```bash
-make cdown 
-make rdown
+make download
 ```
 
 #### Use upload.cpp
 ```bash
-make cup
-make rup
+make upload
 ```
 
 #### Use ping.cpp
 ```bash
-make cping 
-make rping
+make ping
 ```
