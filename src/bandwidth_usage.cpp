@@ -10,15 +10,20 @@
 #include <thread>
 #include <mutex>
 #include <chrono>
+#include <ifaddrs.h>
 
 void process_packet(u_char *user_data, const struct pcap_pkthdr *header, const u_char *packet);
 void print_bandwidth_usage(std::map<std::string, long long> &device_bandwidth);
+void print_my_ip_address();
 
 std::mutex bandwidth_mutex;
 
 int main() {
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_t *handle;
+
+    // Print your own IP address
+    // print_my_ip_address();
 
     // Get network device
     char *dev = pcap_lookupdev(errbuf);
@@ -76,7 +81,6 @@ void print_bandwidth_usage(std::map<std::string, long long> &device_bandwidth) {
     }
 }
 
-
 void process_packet(u_char *user_data, const struct pcap_pkthdr *header, const u_char *packet) {
     // Get the device_bandwidth map from user_data
     std::map<std::string, long long> &device_bandwidth = *reinterpret_cast<std::map<std::string, long long> *>(user_data);
@@ -111,4 +115,30 @@ void process_packet(u_char *user_data, const struct pcap_pkthdr *header, const u
         std::lock_guard<std::mutex> lock(bandwidth_mutex);
         device_bandwidth[hostname] += header->len;
     }
+}
+
+void print_my_ip_address() {
+    struct ifaddrs *ifaddr, *ifa;
+    char host[NI_MAXHOST];
+
+    if (getifaddrs(&ifaddr) == -1) {
+        perror("getifaddrs");
+        return;
+    }
+
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr == NULL) {
+            continue;
+        }
+
+        int family = ifa->ifa_addr->sa_family;
+        if (family == AF_INET || family == AF_INET6) {
+            getnameinfo(ifa->ifa_addr,
+                        family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6),
+                        host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+            std::cout << "IP address of " << ifa->ifa_name << " (" << (family == AF_INET ? "IPv4" : "IPv6") << "): " << host << std::endl;
+        }
+    }
+
+    freeifaddrs(ifaddr);
 }
