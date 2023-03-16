@@ -5,9 +5,9 @@
 #include <arpa/inet.h>
 #include <map>
 #include <string>
+#include <netinet/if_ether.h>
 
-// Function to process packet
-void process_packet(const struct pcap_pkthdr *header, const u_char *packet, std::map<std::string, long long> &device_bandwidth);
+void process_packet(u_char *user_data, const struct pcap_pkthdr *header, const u_char *packet);
 
 int main() {
     char errbuf[PCAP_ERRBUF_SIZE];
@@ -30,13 +30,8 @@ int main() {
     // Map to store device IP and bandwidth usage
     std::map<std::string, long long> device_bandwidth;
 
-    // Capture packets
-    struct pcap_pkthdr header;
-    const u_char *packet;
-    while (true) {
-        packet = pcap_next(handle, &header);
-        process_packet(&header, packet, device_bandwidth);
-    }
+    // Capture packets using pcap_loop()
+    pcap_loop(handle, -1, process_packet, reinterpret_cast<u_char *>(&device_bandwidth));
 
     // Close pcap handle
     pcap_close(handle);
@@ -44,9 +39,12 @@ int main() {
     return 0;
 }
 
-void process_packet(const struct pcap_pkthdr *header, const u_char *packet, std::map<std::string, long long> &device_bandwidth) {
+void process_packet(u_char *user_data, const struct pcap_pkthdr *header, const u_char *packet) {
+    // Get the device_bandwidth map from user_data
+    std::map<std::string, long long> &device_bandwidth = *reinterpret_cast<std::map<std::string, long long> *>(user_data);
+
     // Get IP header
-    struct ip *ip_header = (struct ip *)(packet + 14);
+    struct ip *ip_header = (struct ip *)(packet + sizeof(struct ether_header));
 
     // Get source IP
     char src_ip[INET_ADDRSTRLEN];

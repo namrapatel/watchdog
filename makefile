@@ -36,4 +36,4 @@ cband:  ./src/bandwidth_usage.cpp
 	g++ -I/opt/homebrew/include/ -lcurl -lpcap -o ./band ./src/bandwidth_usage.cpp
 
 rband: ./band
-	./band
+	sudo ./band
