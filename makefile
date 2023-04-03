@@ -3,9 +3,9 @@ CXXFLAGS = -I/opt/homebrew/include/
 LDLIBS = -lcurl -lpcap
 
 all: 
-	make test && make run
+	make compile && make run
 
-test: src/main.cpp
+compile: src/main.cpp
 	g++ -I/opt/homebrew/include/ src/main.cpp -lcurl -lpcap -o main
 
 run: main
