@@ -1,57 +1,16 @@
-CC=g++
-CFLAGS=-I/opt/homebrew/include/
-LIBS=-lcurl -lpcap
+CXX = g++
+CXXFLAGS = -I/opt/homebrew/include/
+LDLIBS = -lcurl -lpcap
 
-# Download
-download: cdown rdown
+all: 
+	make test && make run
 
-cdown: ./src/download.cpp
-	$(CC) $(CFLAGS) -o ./down $< $(LIBS)
+test: src/main.cpp
+	g++ -I/opt/homebrew/include/ src/main.cpp -lcurl -lpcap -o main
 
-rdown: ./down
-	./down
+run: main
+	./main
 
-# Upload
-upload: cup rup
-
-cup: ./src/upload.cpp
-	$(CC) $(CFLAGS) -o ./up $< $(LIBS)
-
-rup: ./up
-	./up
-
-# Ping
-ping: cping rping
-
-cping: ./src/ping.cpp
-	$(CC) $(CFLAGS) -o ./ping $< $(LIBS)
-
-rping: ./ping
-	./ping
-
-# Bandwidth
-bandwidth: cband rband
-
-cband: ./src/bandwidth_usage.cpp
-	$(CC) $(CFLAGS) -std=c++11 -o ./band $< $(LIBS)
-
-rband: ./band
-	sudo ./band
-
-# Jitter
-jitter: cjitter rjitter
-
-cjitter: ./src/jitter.cpp
-	$(CC) -o ./jitter $<
-
-rjitter: ./jitter
-	./jitter google.ca
-
-# Packet Loss
-packetloss: cploss rploss
-
-cploss: ./src/packetloss.cpp
-	$(CC) -o ./packetloss $<
-
-rploss: ./packetloss
-	./packetloss google.ca
+.PHONY: clean
+clean:
+	rm -f main down up ping band jitter packetloss
