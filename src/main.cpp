@@ -60,7 +60,7 @@ int main() {
 }
 
 void download() {
-    system("g++ -I/opt/homebrew/include/ -o ./down ./src/download.cpp -lcurl -lpcap");
+    system("g++ -std=c++11 -I/opt/homebrew/include/ -o ./down ./src/download.cpp -lcurl -lpcap");
     system("./down");
 }
 

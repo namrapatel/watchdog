@@ -98,7 +98,7 @@ private:
      * @brief This callback function is used to discard the upload response data.
      * 
      * @param buffer Pointer to the data buffer.
-     *      * @param size Size of each element to be written.
+     * @param size Size of each element to be written.
      * @param nitems Number of elements to be written.
      * @param userdata Pointer to user-defined data (not used in this implementation).
      * @return The total number of bytes written.
