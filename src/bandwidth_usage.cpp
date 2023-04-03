@@ -27,6 +27,7 @@ using namespace std;
  * @brief A class that measures the network bandwidth by monitoring the traffic on the network interface.
  * @details Uses libpcap to monitor the traffic on the network interface and compute the bandwidth usage.
  * The bandwidth usage is then printed to the console every 5 seconds.
+ * @author Namra Patel
 */
 class BandwidthMonitor {
 public:

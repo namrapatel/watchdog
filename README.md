@@ -1,14 +1,14 @@
-# Watchdog
+# watchdog
 
 Real-time network monitoring right from your command-line.
 
 ### Features
-1. **Download** : A file is automatically downloaded and the download speed is recorded and printed to the user.
-2. **Upload** : A file is automatically uploaded to an HTTP server and the upload speed is recorded and printed to the user.
-3. **Ping** : Enter a host to ping, that host is pinged and the results are printed.
-4. **Bandwidth** : After escalating sudo privileges, all incoming connections are printed with their respective bandwidth usage.
-5. **Jitter** : The current jitter (variation of latency on a packet flow) is calculated by connecting to a reliable host and printed to the user.
-6. **Packet Loss** : The current packetloss is calculated by connecting to a reliable host and printing the packetloss to the user.
+1. **Download**: A file is automatically downloaded and the download speed is recorded and printed to the user.
+2. **Upload**: A file is automatically uploaded to an HTTP server and the upload speed is recorded and printed to the user.
+3. **Ping**: Enter a host to ping, that host is pinged and the results are printed.
+4. **Bandwidth**: After escalating sudo privileges, all incoming connections are printed with their respective bandwidth usage.
+5. **Jitter**: The current jitter (variation of latency on a packet flow) is calculated by connecting to a reliable host and printed to the user.
+6. **Packet Loss**: The current packetloss is calculated by connecting to a reliable host and printing the packetloss to the user.
 
 ### Usage
 
