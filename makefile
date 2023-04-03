@@ -1,55 +1,57 @@
-# Download
-download: 
-	make cdown && make rdown
+CC=g++
+CFLAGS=-I/opt/homebrew/include/
+LIBS=-lcurl -lpcap
 
-cdown:  ./src/download.cpp
-	g++ -I/opt/homebrew/include/ -o ./down ./src/download.cpp -lcurl
+# Download
+download: cdown rdown
+
+cdown: ./src/download.cpp
+	$(CC) $(CFLAGS) -o ./down $< $(LIBS)
 
 rdown: ./down
 	./down
 
 # Upload
-upload:
-	make cup && make rup
+upload: cup rup
 
-cup:  ./src/upload.cpp
-	g++ -I/opt/homebrew/include/ -o ./up ./src/upload.cpp -lcurl
+cup: ./src/upload.cpp
+	$(CC) $(CFLAGS) -o ./up $< $(LIBS)
 
 rup: ./up
 	./up
 
 # Ping
-make ping:
-	make cping && make rping
+ping: cping rping
 
-cping:  ./src/ping.cpp
-	g++ -I/opt/homebrew/include/ -o ./ping ./src/ping.cpp -lcurl
+cping: ./src/ping.cpp
+	$(CC) $(CFLAGS) -o ./ping $< $(LIBS)
 
 rping: ./ping
 	./ping
 
 # Bandwidth
-bandwidth:
-	make cband && make rband
+bandwidth: cband rband
 
-cband:  ./src/bandwidth_usage.cpp
-	g++ -I/opt/homebrew/include/ -std=c++11 -o ./band ./src/bandwidth_usage.cpp -lpcap -lcurl
+cband: ./src/bandwidth_usage.cpp
+	$(CC) $(CFLAGS) -std=c++11 -o ./band $< $(LIBS)
 
 rband: ./band
 	sudo ./band
-	
+
 # Jitter
-jitter: 
-	make cjitter && make rjitter
-cjitter:  ./src/jitter.cpp
-	g++ -o ./jitter ./src/jitter.cpp
+jitter: cjitter rjitter
+
+cjitter: ./src/jitter.cpp
+	$(CC) -o ./jitter $<
+
 rjitter: ./jitter
 	./jitter google.ca
-	
+
 # Packet Loss
-packetloss:
-	make cploss && make rploss
+packetloss: cploss rploss
+
 cploss: ./src/packetloss.cpp
-	g++ -o ./packetloss ./src/packetloss.cpp
+	$(CC) -o ./packetloss $<
+
 rploss: ./packetloss
 	./packetloss google.ca

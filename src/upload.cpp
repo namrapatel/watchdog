@@ -32,7 +32,9 @@ int main()
     char* buffer = new char[file_size];
     file.read(buffer, file_size);
 
-    curl_easy_setopt(curl, CURLOPT_URL, "http://speedtest.tele2.net/upload.php");
+    // Got server IPs from: https://gist.github.com/epixoip/2b8696ed577d584a7f484c006d945051
+    // This server is located in Kitchener, ON, Canada
+    curl_easy_setopt(curl, CURLOPT_URL, "http://speedtest.netflash.net/speedtest/upload.php");
     curl_easy_setopt(curl, CURLOPT_POST, 1L);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, buffer);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, file_size);

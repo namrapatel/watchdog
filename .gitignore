@@ -1,3 +1,7 @@
 down
 up
 ping
+jitter
+packetloss
+band
+host
