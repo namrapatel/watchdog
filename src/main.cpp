@@ -9,6 +9,7 @@ void ping();
 void bandwidth();
 void jitter();
 void packetloss();
+void clean();
 
 int main() {
     int choice;
@@ -45,6 +46,7 @@ int main() {
                 packetloss();
                 break;
             case 0:
+                clean();
                 cout << "Exiting..." << endl;
                 break;
             default:
@@ -73,7 +75,7 @@ void ping() {
 }
 
 void bandwidth() {
-    system("g++ -I/opt/homebrew/include/ -std=c++11 -o ./band ./src/bandwidth_usage.cpp -lcurl -lpcap");
+    system("g++ -Wno-deprecated-declarations -I/opt/homebrew/include/ -std=c++11 -o ./band ./src/bandwidth_usage.cpp -lcurl -lpcap");
     system("sudo ./band");
 }
 
@@ -85,4 +87,8 @@ void jitter() {
 void packetloss() {
     system("g++ -o ./packetloss ./src/packetloss.cpp");
     system("./packetloss google.ca");
+}
+
+void clean() {
+    system("make clean");
 }
