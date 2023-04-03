@@ -12,82 +12,98 @@
 #include <chrono>
 #include <ifaddrs.h>
 #include <cstring>
-
 using namespace std;
 
-void process_packet(u_char *user_data, const struct pcap_pkthdr *header, const u_char *packet);
-void print_bandwidth_usage(map<string, long long> &device_bandwidth);
-void print_my_ip_address();
+class BandwidthMonitor {
+public:
+    BandwidthMonitor();
+    void startMonitoring();
+    void stopMonitoring();
+    void printBandwidthUsage();
 
-mutex bandwidth_mutex;
+private:
+    void processPacket(const struct pcap_pkthdr *header, const u_char *packet);
+    void printMyIpAddress();
+    void printBandwidthUsageHelper();
+    std::string resolveHostName(const char *ip);
 
-int main() {
+    std::mutex bandwidth_mutex_;
+    std::map<std::string, long long> device_bandwidth_;
+    pcap_t *handle_;
+    bool is_running_;
+    std::thread print_thread_;
+};
+
+BandwidthMonitor::BandwidthMonitor()
+    : handle_(nullptr), is_running_(false)
+{
     char errbuf[PCAP_ERRBUF_SIZE];
-    pcap_t *handle;
-
-    // Print your own IP address
-    // print_my_ip_address();
 
     // Get network device
     char *dev = pcap_lookupdev(errbuf);
     if (dev == NULL) {
-        cerr << "Device not found: " << errbuf << endl;
-        return 1;
+        std::cerr << "Device not found: " << errbuf << std::endl;
+        return;
     }
 
     // Open device
-    handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
-    if (handle == NULL) {
-        cerr << "Error opening device: " << errbuf << endl;
-        return 1;
+    handle_ = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
+    if (handle_ == NULL) {
+        std::cerr << "Error opening device: " << errbuf << std::endl;
+        return;
     }
 
-    // Map to store device IP and bandwidth usage
-    map<string, long long> device_bandwidth;
+    // Print your own IP address
+    printMyIpAddress();
+}
+
+void BandwidthMonitor::startMonitoring() {
+    if (is_running_) {
+        return;
+    }
+
+    is_running_ = true;
 
     // Start a separate thread to print bandwidth usage every second
-    thread print_thread([&device_bandwidth]() mutable { print_bandwidth_usage(device_bandwidth); });
+    print_thread_ = std::thread(&BandwidthMonitor::printBandwidthUsageHelper, this);
 
     // Capture packets using pcap_loop()
-    pcap_loop(handle, -1, process_packet, reinterpret_cast<u_char *>(&device_bandwidth));
-
-    // Close pcap handle
-    pcap_close(handle);
-
-    // Join the print thread
-    print_thread.join();
-
-    return 0;
+    pcap_loop(handle_, -1, [](u_char *user_data, const struct pcap_pkthdr *header, const u_char *packet) {
+        BandwidthMonitor *monitor = reinterpret_cast<BandwidthMonitor *>(user_data);
+        monitor->processPacket(header, packet);
+    }, reinterpret_cast<u_char *>(this));
 }
 
+void BandwidthMonitor::stopMonitoring() {
+    if (!is_running_) {
+        return;
+    }
 
-void print_bandwidth_usage(map<string, long long> &device_bandwidth) {
-    while (true) {
-        // Clear console
-        #ifdef _WIN32
-            system("cls");
-        #else
-            system("clear");
-        #endif
+    is_running_ = false;
 
-        // Print devices and bandwidth usage
-        {
-            lock_guard<mutex> lock(bandwidth_mutex);
-            cout << "Devices connected and bandwidth usage:" << endl;
-            for (const auto &device : device_bandwidth) {
-                cout << device.first << ": " << device.second << " bytes" << endl;
-            }
-        }
+    // Join the print thread
+    if (print_thread_.joinable()) {
+        print_thread_.join();
+    }
 
-        // Sleep for 1 second
-        this_thread::sleep_for(chrono::seconds(1));
+    // Close pcap handle
+    if (handle_ != nullptr) {
+        pcap_close(handle_);
+        handle_ = nullptr;
     }
 }
 
-void process_packet(u_char *user_data, const struct pcap_pkthdr *header, const u_char *packet) {
-    // Get the device_bandwidth map from user_data
-    std::map<std::string, long long> &device_bandwidth = *reinterpret_cast<std::map<std::string, long long> *>(user_data);
+void BandwidthMonitor::printBandwidthUsage() {
+    std::lock_guard<std::mutex> lock(bandwidth_mutex_);
 
+    // Print devices and bandwidth usage
+    std::cout << "Devices connected and bandwidth usage:" << std::endl;
+    for (const auto &device : device_bandwidth_) {
+        std::cout << device.first << ": " << device.second << " bytes" << std::endl;
+    }
+}
+
+void BandwidthMonitor::processPacket(const struct pcap_pkthdr *header, const u_char *packet) {
     // Get IP header
     struct ip *ip_header = (struct ip *)(packet + sizeof(struct ether_header));
 
@@ -96,26 +112,80 @@ void process_packet(u_char *user_data, const struct pcap_pkthdr *header, const u
     inet_ntop(AF_INET, &(ip_header->ip_src), src_ip, INET_ADDRSTRLEN);
 
     // Resolve hostname
+    std::string hostname = resolveHostName(src_ip);
+
+    // Update bandwidth usage
+    {
+        std::lock_guard<std::mutex> lock(bandwidth_mutex_);
+        device_bandwidth_[hostname] += header->len;
+    }
+}
+
+void BandwidthMonitor::printMyIpAddress() {
+    char ip[INET_ADDRSTRLEN];
+    struct ifaddrs *addrs, *tmp;
+    getifaddrs(&addrs);
+    tmp = addrs;
+    while (tmp) {
+        if (tmp->ifa_addr && tmp->ifa_addr->sa_family == AF_INET) {
+            struct sockaddr_in *pAddr = (struct sockaddr_in *)tmp->ifa_addr;
+            // Convert IP address to string and print
+            inet_ntop(AF_INET, &(pAddr->sin_addr), ip, INET_ADDRSTRLEN);
+            std::cout << "My IP address is: " << ip << std::endl;
+        }
+        tmp = tmp->ifa_next;
+    }
+    freeifaddrs(addrs);
+}
+
+void BandwidthMonitor::printBandwidthUsageHelper() {
+    while (is_running_) {
+        // Clear console
+        #ifdef _WIN32
+            system("cls");
+        #else
+            system("clear");
+        #endif
+
+        printBandwidthUsage();
+
+        // Sleep for 1 second
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+}
+
+std::string BandwidthMonitor::resolveHostName(const char *ip) {
+    // Resolve hostname
     struct addrinfo hints, *res;
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_CANONNAME;
 
-    int status = getaddrinfo(src_ip, NULL, &hints, &res);
+    int status = getaddrinfo(ip, NULL, &hints, &res);
     std::string hostname;
-    if (status == 0) { 
-        hostname = res->ai_canonname ? res->ai_canonname : src_ip;
+    if (status == 0) {
+        hostname = res->ai_canonname ? res->ai_canonname : ip;
         freeaddrinfo(res);
     } else {
         // Handle error in resolving hostname
         std::cerr << "Error resolving hostname: " << gai_strerror(status) << std::endl;
-        hostname = src_ip;
+        hostname = ip;
     }
 
-    // Update bandwidth usage
-    {
-        std::lock_guard<std::mutex> lock(bandwidth_mutex);
-        device_bandwidth[hostname] += header->len;
-    }
+    return hostname;
+}
+
+
+int main() {
+    BandwidthMonitor monitor;
+
+    monitor.startMonitoring();
+
+    std::cout << "Monitoring bandwidth usage... Press Enter to stop." << std::endl;
+    std::cin.ignore();
+
+    monitor.stopMonitoring();
+
+    return 0;
 }
