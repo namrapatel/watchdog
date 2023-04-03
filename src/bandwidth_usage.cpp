@@ -13,11 +13,13 @@
 #include <ifaddrs.h>
 #include <cstring>
 
+using namespace std;
+
 void process_packet(u_char *user_data, const struct pcap_pkthdr *header, const u_char *packet);
-void print_bandwidth_usage(std::map<std::string, long long> &device_bandwidth);
+void print_bandwidth_usage(map<string, long long> &device_bandwidth);
 void print_my_ip_address();
 
-std::mutex bandwidth_mutex;
+mutex bandwidth_mutex;
 
 int main() {
     char errbuf[PCAP_ERRBUF_SIZE];
@@ -29,22 +31,22 @@ int main() {
     // Get network device
     char *dev = pcap_lookupdev(errbuf);
     if (dev == NULL) {
-        std::cerr << "Device not found: " << errbuf << std::endl;
+        cerr << "Device not found: " << errbuf << endl;
         return 1;
     }
 
     // Open device
     handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
     if (handle == NULL) {
-        std::cerr << "Error opening device: " << errbuf << std::endl;
+        cerr << "Error opening device: " << errbuf << endl;
         return 1;
     }
 
     // Map to store device IP and bandwidth usage
-    std::map<std::string, long long> device_bandwidth;
+    map<string, long long> device_bandwidth;
 
     // Start a separate thread to print bandwidth usage every second
-    std::thread print_thread([&device_bandwidth]() mutable { print_bandwidth_usage(device_bandwidth); });
+    thread print_thread([&device_bandwidth]() mutable { print_bandwidth_usage(device_bandwidth); });
 
     // Capture packets using pcap_loop()
     pcap_loop(handle, -1, process_packet, reinterpret_cast<u_char *>(&device_bandwidth));
@@ -59,7 +61,7 @@ int main() {
 }
 
 
-void print_bandwidth_usage(std::map<std::string, long long> &device_bandwidth) {
+void print_bandwidth_usage(map<string, long long> &device_bandwidth) {
     while (true) {
         // Clear console
         #ifdef _WIN32
@@ -70,15 +72,15 @@ void print_bandwidth_usage(std::map<std::string, long long> &device_bandwidth) {
 
         // Print devices and bandwidth usage
         {
-            std::lock_guard<std::mutex> lock(bandwidth_mutex);
-            std::cout << "Devices connected and bandwidth usage:" << std::endl;
+            lock_guard<mutex> lock(bandwidth_mutex);
+            cout << "Devices connected and bandwidth usage:" << endl;
             for (const auto &device : device_bandwidth) {
-                std::cout << device.first << ": " << device.second << " bytes" << std::endl;
+                cout << device.first << ": " << device.second << " bytes" << endl;
             }
         }
 
         // Sleep for 1 second
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        this_thread::sleep_for(chrono::seconds(1));
     }
 }
 
@@ -116,30 +118,4 @@ void process_packet(u_char *user_data, const struct pcap_pkthdr *header, const u
         std::lock_guard<std::mutex> lock(bandwidth_mutex);
         device_bandwidth[hostname] += header->len;
     }
-}
-
-void print_my_ip_address() {
-    struct ifaddrs *ifaddr, *ifa;
-    char host[NI_MAXHOST];
-
-    if (getifaddrs(&ifaddr) == -1) {
-        perror("getifaddrs");
-        return;
-    }
-
-    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
-        if (ifa->ifa_addr == NULL) {
-            continue;
-        }
-
-        int family = ifa->ifa_addr->sa_family;
-        if (family == AF_INET || family == AF_INET6) {
-            getnameinfo(ifa->ifa_addr,
-                        family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6),
-                        host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
-            std::cout << "IP address of " << ifa->ifa_name << " (" << (family == AF_INET ? "IPv4" : "IPv6") << "): " << host << std::endl;
-        }
-    }
-
-    freeifaddrs(ifaddr);
 }
