@@ -324,6 +324,7 @@ std::string BandwidthMonitor::resolveHostName(const char *ip) {
  * Then, it displays a message to the console informing the user that the program is monitoring bandwidth usage and will stop when the Enter key is pressed. It waits for the user to press Enter, and then calls the BandwidthMonitor object's stopMonitoring() method to stop the capture and monitoring of network traffic.
  * @param None.
  * @return 0 if the program terminates successfully.
+ * @author Namra Patel
  */
 int main() {
     BandwidthMonitor monitor;
