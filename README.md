@@ -14,7 +14,7 @@ Real-time network monitoring right from your command-line.
 
 Ensure that you have `g++` installed, alongside any of the libraries that might be used in the program that you're trying to run. As long as you have those, from the root folder you can run the following bash command. Upon exiting the program, the environment will be automatically cleaned up and ready to run again.
 
-### Use Watchdog 
+### Use watchdog 
 ```bash
 make all
 ```

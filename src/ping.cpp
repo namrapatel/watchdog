@@ -5,8 +5,16 @@
 #include <regex>
 
 /**
+ * @file ping.spp
+ * @brief The Ping class encapsulates the functionality for pinging a host and computing the average latency.
+ * @author Namra Patel
+ */
+
+/**
+ * @class Ping
  * @brief The Ping class encapsulates the functionality for pinging a host and computing the average latency.
  * 
+ * @author Namra Patel
  */
 class Ping {
 public:
@@ -38,11 +46,22 @@ private:
     double total_latency_;  ///< The total latency for all pings.
 };
 
+/**
+ * @brief Construct a new Ping object with the specified host and number of trials.
+ * 
+ * @param host The host to ping.
+ * @param num_trials The number of times to ping the host.
+ */
 Ping::Ping(const std::string& host, int num_trials)
     : host_(host), num_trials_(num_trials), total_latency_(0.0)
 {
 }
 
+/**
+ * @brief Execute the ping command and capture the output.
+ * 
+ * @return The output from the ping command.
+ */
 std::string Ping::ping()
 {
     std::string command = "ping -c 1 " + host_;
@@ -75,6 +94,11 @@ std::string Ping::ping()
     return output;
 }
 
+/**
+ * @brief Compute the average latency for the pings.
+ * 
+ * @return The average latency in milliseconds.
+ */
 double Ping::average_latency() const
 {
     return total_latency_ / num_trials_;
