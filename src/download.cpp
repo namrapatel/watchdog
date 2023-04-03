@@ -134,7 +134,7 @@ private:
         return size * nmemb;
     }
 
-CURL* m_curl; /**< Pointer to the libcurl object. */
+    CURL* m_curl; /**< Pointer to the libcurl object. */
 };
 
 /**
