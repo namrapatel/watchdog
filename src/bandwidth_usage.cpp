@@ -11,6 +11,7 @@
 #include <mutex>
 #include <chrono>
 #include <ifaddrs.h>
+#include <cstring>
 
 void process_packet(u_char *user_data, const struct pcap_pkthdr *header, const u_char *packet);
 void print_bandwidth_usage(std::map<std::string, long long> &device_bandwidth);

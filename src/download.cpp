@@ -60,7 +60,7 @@ int main()
 
                 // Compute the elapsed time in milliseconds
                 auto elapsed = duration_cast<milliseconds>(endDownload - startDownload).count();
-                printf("elapsed: %d\n", elapsed);
+                printf("elapsed: %ld\n", elapsed);
 
 
                 totalElapsed += elapsed;

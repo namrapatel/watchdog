@@ -5,6 +5,8 @@ Real-time network monitoring right from your command-line.
 ### Features
 - [x] Network bandwidth monitoring: Download and upload bandwidth testing
 - [x] Latency between computer and inputted IP/hostname
+- [x] Jitter between host and common hostname.
+- [x] Packetloss between host and common hostname.
 - [ ] List connected devices
 - [ ] Bandwidth usage per device
     - Filter packets by port number (HTTP or other)
@@ -35,4 +37,14 @@ make upload
 #### Use ping.cpp
 ```bash
 make ping
+```
+
+#### Use jitter.cpp
+```bash
+make jitter
+```
+
+#### Use packetloss.cpp
+```bash
+make packetloss
 ```
