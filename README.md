@@ -3,48 +3,39 @@
 Real-time network monitoring right from your command-line.
 
 ### Features
-- [x] Network bandwidth monitoring: Download and upload bandwidth testing
-- [x] Latency between computer and inputted IP/hostname
-- [x] Jitter between host and common hostname.
-- [x] Packetloss between host and common hostname.
-- [ ] List connected devices
-- [ ] Bandwidth usage per device
-    - Filter packets by port number (HTTP or other)
-    - Filter by protocol
-    - Filter by IP address range
-    - Filter by packet content
+1. ***Download*** : A file is automatically downloaded and the download speed is recorded and printed to the user.
+2. ***Upload*** : A file is automatically uploaded to an HTTP server and the upload speed is recorded and printed to the user.
+3. ***Ping*** : Enter a host to ping, that host is pinged and the results are printed.
+4. ***Bandwidth*** : After escalating sudo privileges, all incoming connections are printed with their respective bandwidth usage.
+5. ***Jitter*** : The current jitter (variation of latency on a packet flow) is calculated by connecting to a reliable host and printed to the user.
+6. ***Packetloss*** : The current packetloss is calculated by connecting to a reliable host and printing the packetloss to the user.
 
 ### Usage
 
-Ensure that you have `g++` installed, alongside any of the libraries that might be used in the program that you're trying to run. As long as you have those, from the root folder you can run the following bash commands.
+Ensure that you have `g++` installed, alongside any of the libraries that might be used in the program that you're trying to run. As long as you have those, from the root folder you can run the following bash command. Upon exiting the program, the environment will be automatically cleaned up and ready to run again.
 
-
-#### Use bandwidth_usage.cpp
+### Use WatchDog 
 ```bash
-make bandwidth
+make all
 ```
 
-#### Use download.cpp
-```bash
-make download
-```
+### Structure
 
-#### Use upload.cpp
-```bash
-make upload
-```
+The codebase is structured as follows:
 
-#### Use ping.cpp
-```bash
-make ping
 ```
-
-#### Use jitter.cpp
-```bash
-make jitter
-```
-
-#### Use packetloss.cpp
-```bash
-make packetloss
+group19/
+├─ src/
+│ ├─ download.cpp: test your download speed.
+│ ├─ upload.cpp: test your upload speed. 
+│ ├─ ping.cpp: test your ping. 
+│ ├─ bandwidth_usage.cpp: display the bandwidth usage of all connections. 
+│ ├─ jitter.cpp: display jitter by connecting to a reliable host. 
+│ ├─ packetloss.cpp: display packetloss by connecting to a reliable host.
+├─ data/
+│ ├─ 10MB.zip
+│ ├─ 20MB.bin 
+│ ├─ 5MB.bin 
+├─ makefile
+├─ README.md
 ```
